@@ -105,14 +105,17 @@ verify  = 2
 
 Les conteneurs `eai` et `dpi` incluent un script bash minimal :
 
-* `send.sh` – envoie un message HL7 depuis un fichier vers le socket local
-* `listen.sh` – écoute et affiche les messages reçus
+* `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log`)
+* `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`)
 
 Vous pouvez ainsi tester facilement :
 
 ```bash
-docker compose exec eai /app/send.sh          # pousse un ORU^R01
-docker compose exec dpi /app/listen.sh        # constate la réception
+docker compose exec eai /app/send.sh          # envoie un MDM^T02 vers le DPI
+docker compose exec dpi /app/listen.sh        # constate la réception côté DPI
+
+docker compose exec dpi /app/send.sh          # envoie un ADT^A01 vers l'EAI
+docker compose exec eai /app/listen.sh        # constate la réception côté EAI
 ```
 
 ---
