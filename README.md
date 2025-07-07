@@ -1,139 +1,152 @@
-# mllp-safetunnel
+# mllp‑safetunnel
 
-Sécurisation des échanges HL7/MLLP entre un **EAI** et un **DPI** à l'aide de Stunnel (TLS mutuel). Chaque conteneur intègre Stunnel et de petits scripts Python pour simuler l'envoi et la réception de messages.
+Sécurisation des flux HL7/MLLP entre un EAI et un DPI à l'aide de **Stunnel** en TLS mutuel (mTLS). Chaque conteneur contient :
 
-```
-EAI (21010/22010) <--TLS 32100/32200--> DPI
-```
+* **Stunnel** : termine/démarre la connexion TLS.
+* De petits scripts **Python** simulant l'envoi et la réception de messages HL7 (MDM, ADT…).
 
-* `21010` : flux sortants **EAI → DPI** en clair redirigés vers Stunnel
-* `22010` : flux sortants **DPI → EAI** en clair redirigés vers Stunnel
-* Seuls les ports TLS `32100` (DPI) et `32200` (EAI) sont exposés
-
-## Contenu du dépôt
-
-| Répertoire / fichier | Rôle |
-|----------------------|------|
-| `eai/`               | Dockerfile et scripts Python simulant l'envoi/réception HL7 |
-| `dpi/`               | Idem côté DPI |
-| `stunnel/`           | Certificats X.509 *dev* |
-| `docker-compose.yml` | Orchestration des deux conteneurs |
-| `docs/`              | Diagrammes, cheatsheets HL7, bonnes pratiques sécurité |
-
-Les conteneurs utilisent deux réseaux internes : `net_eai` et `net_dpi`. Seuls les ports TLS sont exposés à l'hôte.
+> Objectif : fournir un bac à sable minimal pour valider rapidement la mise en place d'une enveloppe TLS autour d'un lien MLLP avant de brancher un « vrai » EAI/DPI.
 
 ---
 
-## Prérequis
+## ⚡ Vue d'ensemble
 
-* Docker ≥ 24.0 et Docker Compose v2  
-* OpenSSL (génération de certificats) si vous changez les clés fournies  
-* Ports libres : **32100, 32200** (21010 et 22010 restent internes)
+```text
+           ┌──────────────────────┐                ┌──────────────────────┐
+           │        EAI          │                 │         DPI          │
+Plain HL7  │ (app :21010 / 22010)│                 │ (app :21010 / 22010) │ Plain HL7
+──────────▶│  Stunnel client      │──mTLS 32100──▶│  Stunnel server      │──────────▶
+           │  Stunnel server      │←─mTLS 32200──  │  Stunnel client      │
+           └──────────────────────┘                └──────────────────────┘
+```
+
+| Sens          | Port clair | Port TLS | Rôle                                                                       |
+| ------------- | ---------- | -------- | -------------------------------------------------------------------------- |
+| **EAI ➜ DPI** | `21010`    | `32100`  | Le client EAI se connecte localement en clair, Stunnel chiffre vers le DPI |
+| **DPI ➜ EAI** | `22010`    | `32200`  | Même principe dans l'autre sens                                            |
+
+Seuls les ports **32100** (serveur DPI) et **32200** (serveur EAI) sont exposés à l'hôte/réseau.
 
 ---
 
-## Lancement rapide
+## 🗂️ Contenu du dépôt
+
+| Chemin               | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `eai/`               | `Dockerfile` + scripts Python simulant l'envoi/écoute côté EAI |
+| `dpi/`               | Idem côté DPI                                                  |
+| `stunnel/`           | CA & certificats X.509 de développement + script de génération |
+| `docker-compose.yml` | Orchestration des deux conteneurs & réseaux                    |
+| `docs/`              | Diagrammes, cheatsheets HL7, bonnes pratiques sécurité         |
+
+Deux réseaux **internes** : `net_eai` et `net_dpi`. Aucun flux clair n'est exposé hors conteneurs.
+
+---
+
+## 🚀 Mise en route rapide
 
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/votre_org/mllp-safetunnel.git
-cd mllp-safetunnel
+$ git clone https://github.com/votre_org/mllp-safetunnel.git
+$ cd mllp-safetunnel
 
-# 2. (Optionnel) régénérer les certificats
-./stunnel/gen-certs.sh
+# 2. (Optionnel) Régénérer les certificats de dev
+$ ./stunnel/gen-certs.sh
 
-# 3. Démarrer l'ensemble
-docker compose up -d
+# 3. Lancer l'infrastructure
+$ docker compose up -d
 
-# 4. Vérifier
-docker compose logs -f eai
-````
+# 4. Suivre les logs
+$ docker compose logs -f eai   # côté EAI
+$ docker compose logs -f dpi   # côté DPI
+```
+
+> **Astuce** : ajoutez `--build` pour reconstruire les images après modification des scripts.
 
 ---
 
-## Détails des tunnels Stunnel
+## 🔧 Détails des configurations Stunnel
 
-### EAI → DPI (`eai/stunnel.conf`)
+### EAI ➜ DPI (`eai/stunnel.conf`)
 
 ```ini
-client  = yes
-foreground = yes
+client      = yes
+foreground  = yes
 [hl7_to_dpi]
-accept  = 0.0.0.0:21010      ; l’EAI se connecte ici en clair
-connect = dpi:32100          ; TLS vers le serveur DPI
-cert    = /certs/eai.crt
-key     = /certs/eai.key
-CAfile  = /certs/ca.crt
-verify  = 2                  ; mTLS
-sslVersion = TLSv1.2
+accept      = 0.0.0.0:21010   ; l'EAI se connecte ici en clair
+connect     = dpi:32100       ; Stunnel chiffre vers le DPI
+cert        = /certs/eai.crt
+key         = /certs/eai.key
+CAfile      = /certs/ca.crt
+verify      = 2               ; mTLS obligatoire
+sslVersion  = TLSv1.2
 ```
-Le script `send.sh` du conteneur **eai** se connecte donc toujours sur ce port local `21010` géré par Stunnel, qui se charge ensuite d'établir la connexion TLS vers `dpi:32100`.
 
-### DPI (serveur) (`dpi/stunnel.conf`)
+Le script `send.sh` du conteneur **EAI** écrit toujours sur `localhost:21010`. Stunnel relaie en TLS vers `dpi:32100`.
+
+### DPI ➜ EAI (`dpi/stunnel.conf`)
 
 ```ini
 foreground = yes
 [hl7_from_eai]
-accept  = 0.0.0.0:32100      ; écoute TLS
-connect = 127.0.0.1:21010    ; redirige vers l’app DPI en clair
-cert    = /certs/dpi.crt
-key     = /certs/dpi.key
-CAfile  = /certs/ca.crt
-verify  = 2
+accept     = 0.0.0.0:32100    ; écoute TLS
+connect    = 127.0.0.1:21010  ; redirige vers l'app DPI en clair
+cert       = /certs/dpi.crt
+key        = /certs/dpi.key
+CAfile     = /certs/ca.crt
+verify     = 2
 ```
-Côté DPI, c'est l'inverse : le script `send.sh` envoie ses messages sur le port local `22010` (tenu par Stunnel) qui établit la connexion TLS sortante vers `eai:32200`.
 
-> Les tunnels **retour** (DPI → EAI) suivent le même schéma avec les ports `22010` (clair) et `32200` (TLS).
+Le flux retour utilise `22010` (clair) ↔ `32200` (TLS) suivant la même logique.
 
 ---
 
-## Simulation des flux HL7
+## 🧪 Simulation des flux HL7
 
-Les conteneurs `eai` et `dpi` incluent des scripts Python simples :
+Scripts disponibles dans chaque conteneur :
 
-* `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log` et attend un ACK)
-* `send_loop.sh` – relance `send.sh` toutes les 20 secondes en tâche de fond
-* `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`, renvoie un ACK)
-* `stunnel.log` – journal de Stunnel (client et serveur)
-* `server.log` – journal du serveur MLLP lancé au démarrage du conteneur
-  
-`send_loop.sh` est exécuté automatiquement à l’initialisation pour envoyer les messages de démonstration toutes les 20 secondes.
-Les logs sont visibles via `docker compose logs` et conservés sur disque.
+| Script         | Rôle                                                                                                |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| `send.sh`      | Envoie un message HL7 depuis `message.hl7` vers le socket local, attend un ACK, log dans `send.log` |
+| `send_loop.sh` | Relance `send.sh` toutes les 20 s (démarré automatiquement)                                         |
+| `listen.sh`    | Écoute le port clair, affiche / log les messages reçus (`listen.log`) et renvoie un ACK             |
+| `server.py`    | Petit serveur MLLP appelé par `listen.sh`                                                           |
+| `stunnel.log`  | Journal Stunnel                                                                                     |
 
-Vous pouvez ainsi tester facilement :
+### Exemples de test
 
 ```bash
-docker compose exec eai /app/send.sh          # envoie un MDM^T02 vers le DPI
-docker compose exec dpi /app/listen.sh        # constate la réception côté DPI
+# Envoyer un MDM^T02 du EAI vers le DPI
+$ docker compose exec eai /app/send.sh
 
-docker compose exec dpi /app/send.sh          # envoie un ADT^A01 vers l'EAI
-docker compose exec eai /app/listen.sh        # constate la réception côté EAI
+# Vérifier la réception côté DPI
+$ docker compose exec dpi /app/listen.sh
+
+# Flux inverse : ADT^A01 du DPI vers l'EAI
+$ docker compose exec dpi /app/send.sh
+$ docker compose exec eai /app/listen.sh
 ```
 
 ---
 
-## Personnalisation
+## 🛠️ Personnalisation
 
-| Besoin                          | Où modifier                                                  |
-| ------------------------------- | ------------------------------------------------------------ |
-| Ajouter des certificats de prod | remplacer `stunnel/ca.crt`, `eai.crt`, `dpi.crt`, etc.       |
-| Changer les ports               | éditer `stunnel.conf` + `docker-compose.yml`                 |
-| Monter un vrai EAI / DPI        | remplacer l’image de simulation par votre application réelle |
-
----
-
-## Sécurité & bonnes pratiques
-
-1. **mTLS obligatoire** (`verify = 2`).
-2. Rotation des certificats : script `gen-certs.sh` prévu pour du renouvellement.
-3. Pare-feu extérieur : ouvrez uniquement `32100` et `32200` entre les deux hôtes.
-4. Surveiller `stunnel.log`; passer `debug = notice` en prod.
+| Besoin                       | Fichier(s) à modifier                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| **Certificats de prod**      | Remplacer les CRT/KEY dans `stunnel/` (penser à la CA)                                 |
+| **Changement de ports**      | `stunnel/*.conf` + `docker-compose.yml`                                                |
+| **Brancher un vrai EAI/DPI** | Remplacer l'image de simulation par votre application réelle dans `docker-compose.yml` |
 
 ---
 
-## Licence
 
-MIT – adaptable aux besoins hospitaliers (conformité HDS / SEGUR à vérifier selon vos flux réels).
+
+## 📄 Licence
+
+[MIT](LICENSE) – librement réutilisable et adaptable aux besoins hospitaliers.
 
 ---
 
+## 🙌 Contribuer
+
+Les PR sont les bienvenues ! Ouvrez un ticket pour discuter d'une fonctionnalité ou d'un correctif avant de soumettre.
