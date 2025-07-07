@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
-stunnel /app/stunnel.conf &
-python3 /app/server.py 22010 &
+stunnel /app/stunnel.conf 2>&1 | tee -a /app/stunnel.log &
+python3 /app/server.py 22010 | tee -a /app/server.log &
 sleep infinity

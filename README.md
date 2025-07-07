@@ -91,7 +91,9 @@ Les conteneurs `eai` et `dpi` incluent des scripts Python simples :
 
 * `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log`)
 * `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`)
-Les messages sont visibles via `docker compose logs`.
+* `stunnel.log` – journal de Stunnel (client et serveur)
+* `server.log` – journal du serveur MLLP lancé au démarrage du conteneur
+Les logs sont visibles via `docker compose logs` et conservés sur disque.
 
 Vous pouvez ainsi tester facilement :
 
