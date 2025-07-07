@@ -12,12 +12,12 @@ Sécurisation des flux HL7/MLLP entre un EAI et un DPI à l'aide de **Stunnel** 
 ## ⚡ Vue d'ensemble
 
 ```text
-           ┌──────────────────────┐                ┌──────────────────────┐
-           │        EAI          │                 │         DPI          │
-Plain HL7  │ (app :21010 / 22010)│                 │ (app :21010 / 22010) │ Plain HL7
-──────────▶│  Stunnel client      │──mTLS 32100──▶│  Stunnel server      │──────────▶
-           │  Stunnel server      │←─mTLS 32200──  │  Stunnel client      │
-           └──────────────────────┘                └──────────────────────┘
+              ┌──────────────────────┐                ┌──────────────────────┐
+              │        EAI           │                │         DPI          │
+Plain HL7     │ (app :21010 / 22010) │                │ (app :21010 / 22010) │ Plain HL7
+ ─────────▶  │ Stunnel client       │──mTLS 32100──▶ │  Stunnel server      │──────────▶
+              │  Stunnel server      │←─mTLS 32200──  │  Stunnel client      │
+              └──────────────────────┘                └──────────────────────┘
 ```
 
 | Sens          | Port clair | Port TLS | Rôle                                                                       |
