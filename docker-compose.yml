@@ -1,0 +1,26 @@
+services:
+  eai:
+    build: ./eai
+    volumes:
+      - ./eai:/app
+      - ./stunnel/certs:/certs:ro
+    networks:
+      - net_eai
+      - net_dpi
+    ports:
+      - "32200:32200"
+
+  dpi:
+    build: ./dpi
+    volumes:
+      - ./dpi:/app
+      - ./stunnel/certs:/certs:ro
+    networks:
+      - net_dpi
+      - net_eai
+    ports:
+      - "32100:32100"
+
+networks:
+  net_eai:
+  net_dpi:
