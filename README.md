@@ -89,10 +89,13 @@ verify  = 2
 
 Les conteneurs `eai` et `dpi` incluent des scripts Python simples :
 
-* `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log`)
-* `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`)
+* `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log` et attend un ACK)
+* `send_loop.sh` – relance `send.sh` toutes les 20 secondes en tâche de fond
+* `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`, renvoie un ACK)
 * `stunnel.log` – journal de Stunnel (client et serveur)
 * `server.log` – journal du serveur MLLP lancé au démarrage du conteneur
+  
+`send_loop.sh` est exécuté automatiquement à l’initialisation pour envoyer les messages de démonstration toutes les 20 secondes.
 Les logs sont visibles via `docker compose logs` et conservés sur disque.
 
 Vous pouvez ainsi tester facilement :
