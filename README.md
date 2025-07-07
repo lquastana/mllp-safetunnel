@@ -3,21 +3,20 @@
 Sécurisation des échanges HL7/MLLP entre un **EAI** et un **DPI** au moyen de Stunnel (TLS mutuel).  
 Le projet fournit deux images Docker – `eai` et `dpi` – reliées par une double paire de tunnels chiffrés :
 
-```
 
 ```
-        +-------------+          TLS :32100           +-------------+
+        +-------------+          TLS :32100                               +-------------+
         |   EAI (app) | ==lo=> [Stunnel-EAI] ~~~~~~> [Stunnel-DPI] ==lo=> |   DPI (app) |
-        |             | 21010                    21010 |             |
-        +-------------+                                     +-------------+
+        |             | 21010                    21010                    |             |
+        +-------------+                                                   +-------------+
 
-        +-------------+          TLS :32200           +-------------+
+        +-------------+          TLS :32200                                   +-------------+
         |   DPI (app) | ==lo=> [Stunnel-DPI-out] ~~~> [Stunnel-EAI-in] ==lo=> |   EAI (app) |
-        |             | 22010                    22010 |             |
-        +-------------+                                     +-------------+
+        |             | 22010                    22010                        |             |
+        +-------------+                                                       +-------------+
 ```
 
-````
+
 
 * `21010` : flux sortants **EAI → DPI** (HL7/MLLP clair), encapsulés dans TLS :32100  
 * `22010` : flux sortants **DPI → EAI** (HL7/MLLP clair), encapsulés dans TLS :32200  
@@ -145,7 +144,4 @@ Contributions bienvenues !
 
 ```
 
----
 
-**Prêt à l’emploi :** copiez-collez le `README.md` ci-dessus ; le dépôt contiendrait ensuite les répertoires et fichiers mentionnés (Dockerfile, scripts, configs Stunnel, etc.). Ajustez les certificats et les ports selon votre environnement réel.
-```
