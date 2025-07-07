@@ -1,0 +1,65 @@
+version: '3.9'
+services:
+  eai:
+    build: ./eai
+    volumes:
+      - ./eai:/app
+    networks:
+      - mllp
+  dpi:
+    build: ./dpi
+    volumes:
+      - ./dpi:/app
+    networks:
+      - mllp
+
+  stunnel-eai:
+    image: alpine/stunnel
+    volumes:
+      - ./stunnel/eai/stunnel.conf:/etc/stunnel/stunnel.conf:ro
+      - ./stunnel/certs:/certs:ro
+    depends_on:
+      - dpi
+    networks:
+      - mllp
+    ports:
+      - "21010:21010"
+
+  stunnel-dpi:
+    image: alpine/stunnel
+    volumes:
+      - ./stunnel/dpi/stunnel.conf:/etc/stunnel/stunnel.conf:ro
+      - ./stunnel/certs:/certs:ro
+    depends_on:
+      - eai
+    networks:
+      - mllp
+    ports:
+      - "32100:32100"
+
+  stunnel-dpi-out:
+    image: alpine/stunnel
+    volumes:
+      - ./stunnel/dpi-out/stunnel.conf:/etc/stunnel/stunnel.conf:ro
+      - ./stunnel/certs:/certs:ro
+    depends_on:
+      - eai
+    networks:
+      - mllp
+    ports:
+      - "22010:22010"
+
+  stunnel-eai-in:
+    image: alpine/stunnel
+    volumes:
+      - ./stunnel/eai-in/stunnel.conf:/etc/stunnel/stunnel.conf:ro
+      - ./stunnel/certs:/certs:ro
+    depends_on:
+      - dpi
+    networks:
+      - mllp
+    ports:
+      - "32200:32200"
+
+networks:
+  mllp:
