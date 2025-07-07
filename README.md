@@ -67,6 +67,7 @@ CAfile  = /certs/ca.crt
 verify  = 2                  ; mTLS
 sslVersion = TLSv1.2
 ```
+Le script `send.sh` du conteneur **eai** se connecte donc toujours sur ce port local `21010` géré par Stunnel, qui se charge ensuite d'établir la connexion TLS vers `dpi:32100`.
 
 ### DPI (serveur) (`dpi/stunnel.conf`)
 
@@ -80,6 +81,7 @@ key     = /certs/dpi.key
 CAfile  = /certs/ca.crt
 verify  = 2
 ```
+Côté DPI, c'est l'inverse : le script `send.sh` envoie ses messages sur le port local `22010` (tenu par Stunnel) qui établit la connexion TLS sortante vers `eai:32200`.
 
 > Les tunnels **retour** (DPI → EAI) suivent le même schéma avec les ports `22010` (clair) et `32200` (TLS).
 
