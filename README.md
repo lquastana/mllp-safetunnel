@@ -1,42 +1,26 @@
 # mllp-safetunnel
 
-Sécurisation des échanges HL7/MLLP entre un **EAI** et un **DPI** au moyen de Stunnel (TLS mutuel).  
-Le projet fournit deux images Docker – `eai` et `dpi` – reliées par une double paire de tunnels chiffrés :
-
+Sécurisation des échanges HL7/MLLP entre un **EAI** et un **DPI** à l'aide de Stunnel (TLS mutuel). Chaque conteneur intègre Stunnel et de petits scripts Python pour simuler l'envoi et la réception de messages.
 
 ```
-        +-------------+          TLS :32100                               +-------------+
-        |   EAI (app) | ==lo=> [Stunnel-EAI] ~~~~~~> [Stunnel-DPI] ==lo=> |   DPI (app) |
-        |             | 21010                    21010                    |             |
-        +-------------+                                                   +-------------+
-
-        +-------------+          TLS :32200                                   +-------------+
-        |   DPI (app) | ==lo=> [Stunnel-DPI-out] ~~~> [Stunnel-EAI-in] ==lo=> |   EAI (app) |
-        |             | 22010                    22010                        |             |
-        +-------------+                                                       +-------------+
+EAI (21010/22010) <--TLS 32100/32200--> DPI
 ```
 
-
-
-* `21010` : flux sortants **EAI → DPI** (HL7/MLLP clair), encapsulés dans TLS :32100
-* `22010` : flux sortants **DPI → EAI** (HL7/MLLP clair), encapsulés dans TLS :32200
-* Seuls les ports TLS `32100` et `32200` sont exposés en dehors des conteneurs
-
----
+* `21010` : flux sortants **EAI → DPI** en clair redirigés vers Stunnel
+* `22010` : flux sortants **DPI → EAI** en clair redirigés vers Stunnel
+* Seuls les ports TLS `32100` (DPI) et `32200` (EAI) sont exposés
 
 ## Contenu du dépôt
 
 | Répertoire / fichier | Rôle |
 |----------------------|------|
-| `eai/`               | Dockerfile + script de simulation (netcat) qui pousse/scrute HL7 sur 21010/22010 |
+| `eai/`               | Dockerfile et scripts Python simulant l'envoi/réception HL7 |
 | `dpi/`               | Idem côté DPI |
-| `stunnel/`           | Certificats X.509 *dev* et paires de `stunnel.conf` client / serveur |
-| `docker-compose.yml` | Orchestration complète des 4 conteneurs |
+| `stunnel/`           | Certificats X.509 *dev* |
+| `docker-compose.yml` | Orchestration des deux conteneurs |
 | `docs/`              | Diagrammes, cheatsheets HL7, bonnes pratiques sécurité |
 
-Les services sont répartis sur deux réseaux internes : `net_eai` pour l’EAI et
-`net_dpi` pour le DPI. Les tunnels Stunnel sont connectés aux deux pour assurer
-le transit chiffré.
+Les conteneurs utilisent deux réseaux internes : `net_eai` et `net_dpi`. Seuls les ports TLS sont exposés à l'hôte.
 
 ---
 
@@ -62,18 +46,18 @@ cd mllp-safetunnel
 docker compose up -d
 
 # 4. Vérifier
-docker compose logs -f stunnel-eai
+docker compose logs -f eai
 ````
 
 ---
 
 ## Détails des tunnels Stunnel
 
-### EAI → DPI (`stunnel/eai/stunnel.conf`)
+### EAI → DPI (`eai/stunnel.conf`)
 
 ```ini
 client  = yes
-foreground = no
+foreground = yes
 [hl7_to_dpi]
 accept  = 0.0.0.0:21010      ; l’EAI se connecte ici en clair
 connect = dpi:32100          ; TLS vers le serveur DPI
@@ -84,10 +68,10 @@ verify  = 2                  ; mTLS
 sslVersion = TLSv1.2
 ```
 
-### DPI (serveur) (`stunnel/dpi/stunnel.conf`)
+### DPI (serveur) (`dpi/stunnel.conf`)
 
 ```ini
-foreground = no
+foreground = yes
 [hl7_from_eai]
 accept  = 0.0.0.0:32100      ; écoute TLS
 connect = 127.0.0.1:21010    ; redirige vers l’app DPI en clair
@@ -103,10 +87,11 @@ verify  = 2
 
 ## Simulation des flux HL7
 
-Les conteneurs `eai` et `dpi` incluent un script bash minimal :
+Les conteneurs `eai` et `dpi` incluent des scripts Python simples :
 
 * `send.sh` – envoie un message HL7 depuis un fichier vers le socket local (journalise dans `send.log`)
 * `listen.sh` – écoute et affiche les messages reçus (journalise dans `listen.log`)
+Les messages sont visibles via `docker compose logs`.
 
 Vous pouvez ainsi tester facilement :
 
@@ -149,4 +134,3 @@ MIT – adaptable aux besoins hospitaliers (conformité HDS / SEGUR à vérifier
 
 Laurent Quastana (@laurent.quastana) – Poupie Family
 Contributions bienvenues !
-

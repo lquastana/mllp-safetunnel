@@ -1,5 +1,6 @@
 FROM alpine:3.20
-RUN apk add --no-cache netcat-openbsd
+RUN apk add --no-cache python3 py3-pip stunnel
 WORKDIR /app
-COPY send.sh listen.sh message.hl7 ./
-CMD ["sleep", "infinity"]
+COPY . ./
+RUN chmod +x send.sh listen.sh entrypoint.sh
+CMD ["/app/entrypoint.sh"]

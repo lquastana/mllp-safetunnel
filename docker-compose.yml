@@ -3,62 +3,23 @@ services:
     build: ./eai
     volumes:
       - ./eai:/app
-    networks:
-      - net_eai
-  dpi:
-    build: ./dpi
-    volumes:
-      - ./dpi:/app
-    networks:
-      - net_dpi
-
-  stunnel-eai:
-    build: ./stunnel
-    volumes:
-      - ./stunnel/eai/stunnel.conf:/etc/stunnel/stunnel.conf:ro
       - ./stunnel/certs:/certs:ro
-    depends_on:
-      - dpi
-    networks:
-      - net_eai
-      - net_dpi
-
-  stunnel-dpi:
-    build: ./stunnel
-    volumes:
-      - ./stunnel/dpi/stunnel.conf:/etc/stunnel/stunnel.conf:ro
-      - ./stunnel/certs:/certs:ro
-    depends_on:
-      - eai
-    networks:
-      - net_dpi
-      - net_eai
-    ports:
-      - "32100:32100"
-
-  stunnel-dpi-out:
-    build: ./stunnel
-    volumes:
-      - ./stunnel/dpi-out/stunnel.conf:/etc/stunnel/stunnel.conf:ro
-      - ./stunnel/certs:/certs:ro
-    depends_on:
-      - eai
-    networks:
-      - net_dpi
-      - net_eai
-
-  stunnel-eai-in:
-    build: ./stunnel
-    volumes:
-      - ./stunnel/eai-in/stunnel.conf:/etc/stunnel/stunnel.conf:ro
-      - ./stunnel/certs:/certs:ro
-    depends_on:
-      - dpi
     networks:
       - net_eai
       - net_dpi
     ports:
       - "32200:32200"
+
+  dpi:
+    build: ./dpi
+    volumes:
+      - ./dpi:/app
+      - ./stunnel/certs:/certs:ro
+    networks:
+      - net_dpi
+      - net_eai
+    ports:
+      - "32100:32100"
 
 networks:
   net_eai:
