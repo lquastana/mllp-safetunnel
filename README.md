@@ -137,7 +137,3 @@ MIT – adaptable aux besoins hospitaliers (conformité HDS / SEGUR à vérifier
 
 ---
 
-## Auteur
-
-Laurent Quastana (@laurent.quastana) – Poupie Family
-Contributions bienvenues !
