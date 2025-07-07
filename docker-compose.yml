@@ -1,17 +1,16 @@
-version: '3.9'
 services:
   eai:
     build: ./eai
     volumes:
       - ./eai:/app
     networks:
-      - mllp
+      - net_eai
   dpi:
     build: ./dpi
     volumes:
       - ./dpi:/app
     networks:
-      - mllp
+      - net_dpi
 
   stunnel-eai:
     build: ./stunnel
@@ -21,9 +20,8 @@ services:
     depends_on:
       - dpi
     networks:
-      - mllp
-    ports:
-      - "21010:21010"
+      - net_eai
+      - net_dpi
 
   stunnel-dpi:
     build: ./stunnel
@@ -33,7 +31,8 @@ services:
     depends_on:
       - eai
     networks:
-      - mllp
+      - net_dpi
+      - net_eai
     ports:
       - "32100:32100"
 
@@ -45,9 +44,8 @@ services:
     depends_on:
       - eai
     networks:
-      - mllp
-    ports:
-      - "22010:22010"
+      - net_dpi
+      - net_eai
 
   stunnel-eai-in:
     build: ./stunnel
@@ -57,9 +55,11 @@ services:
     depends_on:
       - dpi
     networks:
-      - mllp
+      - net_eai
+      - net_dpi
     ports:
       - "32200:32200"
 
 networks:
-  mllp:
+  net_eai:
+  net_dpi:

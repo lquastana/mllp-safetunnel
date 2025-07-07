@@ -18,8 +18,9 @@ Le projet fournit deux images Docker – `eai` et `dpi` – reliées par une dou
 
 
 
-* `21010` : flux sortants **EAI → DPI** (HL7/MLLP clair), encapsulés dans TLS :32100  
-* `22010` : flux sortants **DPI → EAI** (HL7/MLLP clair), encapsulés dans TLS :32200  
+* `21010` : flux sortants **EAI → DPI** (HL7/MLLP clair), encapsulés dans TLS :32100
+* `22010` : flux sortants **DPI → EAI** (HL7/MLLP clair), encapsulés dans TLS :32200
+* Seuls les ports TLS `32100` et `32200` sont exposés en dehors des conteneurs
 
 ---
 
@@ -33,13 +34,17 @@ Le projet fournit deux images Docker – `eai` et `dpi` – reliées par une dou
 | `docker-compose.yml` | Orchestration complète des 4 conteneurs |
 | `docs/`              | Diagrammes, cheatsheets HL7, bonnes pratiques sécurité |
 
+Les services sont répartis sur deux réseaux internes : `net_eai` pour l’EAI et
+`net_dpi` pour le DPI. Les tunnels Stunnel sont connectés aux deux pour assurer
+le transit chiffré.
+
 ---
 
 ## Prérequis
 
 * Docker ≥ 24.0 et Docker Compose v2  
 * OpenSSL (génération de certificats) si vous changez les clés fournies  
-* Ports libres : **21010, 22010, 32100, 32200**
+* Ports libres : **32100, 32200** (21010 et 22010 restent internes)
 
 ---
 
