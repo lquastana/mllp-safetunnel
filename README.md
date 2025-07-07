@@ -81,7 +81,7 @@ cert    = /certs/eai.crt
 key     = /certs/eai.key
 CAfile  = /certs/ca.crt
 verify  = 2                  ; mTLS
-options = NO_TLSv1 NO_TLSv1_1
+sslVersion = TLSv1.2
 ```
 
 ### DPI (serveur) (`stunnel/dpi/stunnel.conf`)

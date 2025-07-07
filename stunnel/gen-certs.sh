@@ -22,3 +22,5 @@ openssl x509 -req -in dpi.csr -CA certs/ca.crt -CAkey certs/ca.key \
   -CAcreateserial -out certs/dpi.crt -days 3650
 rm dpi.csr
 
+chmod 600 certs/*.key
+
