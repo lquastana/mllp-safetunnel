@@ -14,7 +14,7 @@ services:
       - mllp
 
   stunnel-eai:
-    image: alpine/stunnel
+    build: ./stunnel
     volumes:
       - ./stunnel/eai/stunnel.conf:/etc/stunnel/stunnel.conf:ro
       - ./stunnel/certs:/certs:ro
@@ -26,7 +26,7 @@ services:
       - "21010:21010"
 
   stunnel-dpi:
-    image: alpine/stunnel
+    build: ./stunnel
     volumes:
       - ./stunnel/dpi/stunnel.conf:/etc/stunnel/stunnel.conf:ro
       - ./stunnel/certs:/certs:ro
@@ -38,7 +38,7 @@ services:
       - "32100:32100"
 
   stunnel-dpi-out:
-    image: alpine/stunnel
+    build: ./stunnel
     volumes:
       - ./stunnel/dpi-out/stunnel.conf:/etc/stunnel/stunnel.conf:ro
       - ./stunnel/certs:/certs:ro
@@ -50,7 +50,7 @@ services:
       - "22010:22010"
 
   stunnel-eai-in:
-    image: alpine/stunnel
+    build: ./stunnel
     volumes:
       - ./stunnel/eai-in/stunnel.conf:/etc/stunnel/stunnel.conf:ro
       - ./stunnel/certs:/certs:ro
